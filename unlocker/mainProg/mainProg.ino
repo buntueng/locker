@@ -24,6 +24,9 @@ byte colPins[COLS] = {17, 25, 26}; //connect to the column pinouts of the keypad
 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
+const int relay_pin = 14;
+const int switch_pin = 27;
+
 String offline_key = "2022";
 unsigned int main_state = 0;
 String password = "";
@@ -36,7 +39,18 @@ String input_password ="";
 bool start_saving = false;
 bool execute_flag = false;
 
+bool delay_close = false;
+unsigned long delay_timer = 0;
+bool on_temp_relay = false;
+
+
+byte switch_state = 0xFF;
+
 void setup(){
+  pinMode(relay_pin,OUTPUT);
+  pinMode(switch_pin,INPUT_PULLUP);
+  digitalWrite(relay_pin,HIGH);       // off relay
+  
   Wire.begin();
   delay(1000);
   Serial.begin(9600);
@@ -49,12 +63,30 @@ void setup(){
   lcd.home();
   main_state = 0;
   state_timer = millis();
-
   Serial.print("Running");
 }
 
 //char key = keypad.getKey();
 void loop(){
+  switch_state = (switch_state<<1)+ digitalRead(switch_pin);
+  if(on_temp_relay)
+  {
+    if(millis()-delay_timer >= 15000)
+    {
+      digitalWrite(relay_pin,HIGH);     // off relay
+      on_temp_relay = false;
+    }
+  }
+  else
+  {
+    if(switch_state == 0x00)
+    {
+      on_temp_relay = true;
+      delay_timer = millis();
+      digitalWrite(relay_pin,LOW);      // on relay
+    }
+  }
+  
   switch(main_state)
   {
     case 0:
@@ -125,7 +157,7 @@ void loop(){
           if(input_password == offline_key)
           {
             show_open();
-            // on relay here
+            digitalWrite(relay_pin,LOW);     // on relay here
             main_state = 4;
             state_timer = millis();
           }
@@ -162,9 +194,9 @@ void loop(){
     }
     case 4:     // from open door
     {
-      if((millis()-state_timer)>=10000)
+      if((millis()-state_timer)>=15000)
       {
-        // off relay
+        digitalWrite(relay_pin,HIGH);// off relay
         main_state = 2;
         clear_2nd_line();
       }
