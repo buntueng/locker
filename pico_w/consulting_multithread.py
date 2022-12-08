@@ -105,6 +105,9 @@ def main_thread():
             selected_key = scankeys()
             if selected_key >= '#' and selected_key <= 'D':
                 keycode = keycode + str(selected_key)
+                lcd.move_to(0,1)
+                lcd.putstr("                ")
+                lcd.putstr(keycode)
             if selected_key == '#':
                 main_state = 3
             else:
@@ -139,7 +142,6 @@ def main_thread():
 def network_thread():
     global network_state
     global passcode
-    
 
     def get_podcast_passcode():
         keycode = ""
