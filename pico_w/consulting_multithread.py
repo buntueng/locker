@@ -266,5 +266,5 @@ def network_thread():
                 network_state = 6
 
 # ====================== threads is starting here ===============
-main_thread()
 _thread.start_new_thread(network_thread, ())
+main_thread()
